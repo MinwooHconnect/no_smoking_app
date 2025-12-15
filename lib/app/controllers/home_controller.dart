@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:get/get.dart';
 import '../models/future_reward.dart';
 
@@ -6,6 +7,22 @@ class HomeController extends GetxController {
   // Observable 변수들
   final elapsed = Duration.zero.obs;
   final targetPeriod = '3일'.obs; // 기본값 3일
+  final currentMotivationalMessage = '저는 자제 중입니다!'.obs;
+
+  // 금연 동기부여 문구 목록
+  static const List<String> motivationalMessages = [
+    '저는 자제 중입니다!',
+    '나는 강하다! 금연을 이겨낼 수 있다!',
+    '건강한 미래를 위해 지금 선택한다!',
+    '금연은 나에게 주는 최고의 선물이다!',
+    '매 순간이 새로운 시작이다!',
+    '나는 담배 없이도 행복할 수 있다!',
+    '금연으로 더 나은 나를 만들어간다!',
+    '지금의 선택이 내 인생을 바꾼다!',
+    '금연은 나의 힘을 보여주는 증거다!',
+    '자유로운 호흡, 자유로운 나!',
+    '금연으로 더 건강하고 행복한 나를 만든다!',
+  ];
 
   // 설정값
   final int cigarettesPerDay = 20;
@@ -14,6 +31,8 @@ class HomeController extends GetxController {
 
   late DateTime quitDate;
   Timer? _timer;
+  Timer? _messageTimer;
+  final _random = Random();
 
   @override
   void onInit() {
@@ -24,11 +43,13 @@ class HomeController extends GetxController {
     );
     _updateElapsed();
     _startTimer();
+    _startMessageTimer();
   }
 
   @override
   void onClose() {
     _timer?.cancel();
+    _messageTimer?.cancel();
     super.onClose();
   }
 
@@ -36,6 +57,23 @@ class HomeController extends GetxController {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       _updateElapsed();
     });
+  }
+
+  void _startMessageTimer() {
+    // 5초마다 문구 변경
+    _messageTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _changeMotivationalMessage();
+    });
+  }
+
+  void _changeMotivationalMessage() {
+    // 현재 문구와 다른 랜덤 문구 선택
+    String newMessage;
+    do {
+      newMessage = motivationalMessages[_random.nextInt(motivationalMessages.length)];
+    } while (newMessage == currentMotivationalMessage.value && motivationalMessages.length > 1);
+    
+    currentMotivationalMessage.value = newMessage;
   }
 
   void _updateElapsed() {
