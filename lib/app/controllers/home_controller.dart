@@ -80,8 +80,16 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _initializeNotifications();
-    _loadData();
+    _initializeNotifications().then((_) {
+      _loadData().then((_) {
+        // 알림 초기화 및 데이터 로드 완료 후 알림 시작
+        if (isQuittingStarted.value &&
+            quitDate != null &&
+            isNotificationVisible.value) {
+          _updateElapsed();
+        }
+      });
+    });
     _startTimer();
     _startMessageTimer();
   }
@@ -142,6 +150,22 @@ class HomeController extends GetxController {
       );
       if (savedCustomMessages != null) {
         customMotivationalMessages.value = savedCustomMessages;
+      }
+
+      // 비활성화된 응원 메시지 불러오기
+      final savedDisabledMessages = prefs.getStringList(
+        _keyDisabledMotivationalMessages,
+      );
+      if (savedDisabledMessages != null) {
+        disabledMotivationalMessages.clear();
+        disabledMotivationalMessages.addAll(savedDisabledMessages);
+      }
+
+      // 데이터 로드 완료 후 알림 업데이트
+      if (isQuittingStarted.value &&
+          quitDate != null &&
+          isNotificationVisible.value) {
+        _updateElapsed();
       }
     } catch (e) {
       // 에러 발생 시 기본값 사용

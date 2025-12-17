@@ -6,8 +6,10 @@ import 'circular_progress_painter.dart';
 import 'target_period_dialog.dart';
 import 'motivational_message_dialog.dart';
 
-class ProgressCard extends GetView<HomeController> {
+class ProgressCard extends StatelessWidget {
   const ProgressCard({super.key});
+
+  HomeController get controller => Get.find<HomeController>();
 
   @override
   Widget build(BuildContext context) {

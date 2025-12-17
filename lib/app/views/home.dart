@@ -55,30 +55,41 @@ class Home extends GetView<HomeController> {
         IconButton(icon: const Icon(Icons.share), onPressed: () => _shareApp()),
         // 알림 설정 버튼 (종 아이콘 토글)
         Obx(
-          () => controller.isQuittingStarted.value
-              ? IconButton(
-                  icon: Icon(
-                    controller.isNotificationVisible.value
-                        ? Icons.notifications_active
-                        : Icons.notifications_off,
-                  ),
-                  onPressed: () {
-                    final wasVisible = controller.isNotificationVisible.value;
-                    controller.toggleNotification();
-                    Get.snackbar(
-                      wasVisible ? '알림 숨김' : '알림 표시',
-                      wasVisible ? '금연 중 알림이 숨겨졌습니다.' : '금연 중 알림이 표시됩니다.',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: AppColor.primary.withValues(alpha: 0.9),
-                      colorText: Colors.white,
-                      duration: const Duration(seconds: 2),
-                      margin: const EdgeInsets.all(16),
-                      borderRadius: 8,
-                      icon: const Icon(Icons.check_circle, color: Colors.white),
-                    );
-                  },
-                )
-              : const SizedBox.shrink(),
+          () => IconButton(
+            icon: Icon(
+              controller.isNotificationVisible.value
+                  ? Icons.notifications_active
+                  : Icons.notifications_off,
+            ),
+            onPressed: () {
+              if (controller.isQuittingStarted.value) {
+                final wasVisible = controller.isNotificationVisible.value;
+                controller.toggleNotification();
+                Get.snackbar(
+                  wasVisible ? '알림 숨김' : '알림 표시',
+                  wasVisible ? '금연 중 알림이 숨겨졌습니다.' : '금연 중 알림이 표시됩니다.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: AppColor.primary.withValues(alpha: 0.9),
+                  colorText: Colors.white,
+                  duration: const Duration(seconds: 2),
+                  margin: const EdgeInsets.all(16),
+                  borderRadius: 8,
+                  icon: const Icon(Icons.check_circle, color: Colors.white),
+                );
+              } else {
+                Get.snackbar(
+                  '알림',
+                  '금연을 시작하면 알림을 사용할 수 있습니다.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: AppColor.primary.withValues(alpha: 0.9),
+                  colorText: Colors.white,
+                  duration: const Duration(seconds: 2),
+                  margin: const EdgeInsets.all(16),
+                  borderRadius: 8,
+                );
+              }
+            },
+          ),
         ),
       ],
     );
