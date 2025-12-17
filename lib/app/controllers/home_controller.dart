@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/future_reward.dart';
@@ -12,6 +13,8 @@ class HomeController extends GetxController {
   final currentMotivationalMessage = '저는 자제 중입니다!'.obs;
   final isQuittingStarted = false.obs; // 금연 시작 여부
   final isNotificationVisible = true.obs; // 알림 표시 여부
+  final isFirstRun = false.obs; // 첫 실행 여부 (데이터 로드 전까지는 false)
+  final isDataLoaded = false.obs; // 데이터 로드 완료 여부
   final customMotivationalMessages = <String>[].obs; // 사용자 정의 응원 메시지
   final disabledMotivationalMessages = <String>{}.obs; // 비활성화된 응원 메시지
 
@@ -64,6 +67,7 @@ class HomeController extends GetxController {
   Timer? _messageTimer;
   final _random = Random();
   final NotificationService _notificationService = NotificationService();
+  final GlobalKey startButtonKey = GlobalKey(); // 튜토리얼용 버튼 키
 
   // SharedPreferences 키
   static const String _keyQuitDate = 'quitDate';
@@ -76,6 +80,7 @@ class HomeController extends GetxController {
       'customMotivationalMessages';
   static const String _keyDisabledMotivationalMessages =
       'disabledMotivationalMessages';
+  static const String _keyIsFirstRun = 'isFirstRun';
 
   @override
   void onInit() {
@@ -161,6 +166,18 @@ class HomeController extends GetxController {
         disabledMotivationalMessages.addAll(savedDisabledMessages);
       }
 
+      // 첫 실행 여부 불러오기
+      final savedIsFirstRun = prefs.getBool(_keyIsFirstRun);
+      if (savedIsFirstRun != null) {
+        isFirstRun.value = savedIsFirstRun;
+      } else {
+        // 저장된 값이 없으면 첫 실행으로 간주
+        isFirstRun.value = true;
+      }
+
+      // 데이터 로드 완료 표시
+      isDataLoaded.value = true;
+
       // 데이터 로드 완료 후 알림 업데이트
       if (isQuittingStarted.value &&
           quitDate != null &&
@@ -219,9 +236,18 @@ class HomeController extends GetxController {
         _keyDisabledMotivationalMessages,
         disabledMotivationalMessages.toList(),
       );
+
+      // 첫 실행 여부 저장
+      await prefs.setBool(_keyIsFirstRun, isFirstRun.value);
     } catch (e) {
       // 저장 실패 시 에러 무시 (선택적)
     }
+  }
+
+  // 튜토리얼 완료
+  void completeTutorial() {
+    isFirstRun.value = false;
+    _saveData();
   }
 
   @override
@@ -339,9 +365,9 @@ class HomeController extends GetxController {
   }
 
   void reset() {
-    quitDate = DateTime.now();
+    quitDate = null; // 시작 전 상태로 복귀
     elapsed.value = Duration.zero;
-    isQuittingStarted.value = true;
+    isQuittingStarted.value = false; // 시작하기 전 상태로 복귀
     _updateElapsed();
     _saveData();
   }

@@ -23,7 +23,7 @@ class StartQuittingDialog extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.flag,
+                Icons.play_arrow, // 시작 아이콘
                 color: AppColor.primary,
                 size: 32,
               ),

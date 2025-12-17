@@ -23,14 +23,14 @@ class ResetConfirmDialog extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.refresh,
+                Icons.stop, // 중단 아이콘
                 color: AppColor.primary,
                 size: 32,
               ),
             ),
             const SizedBox(height: 20),
             const Text(
-              '리셋하시겠습니까?',
+              '초기화하시겠습니까?',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,

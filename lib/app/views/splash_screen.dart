@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // 전면 광고 표시 시도 (광고가 없으면 바로 넘어감)
     await InterstitialAdWidget.showInterstitialAd();
-    
+
     if (!mounted) return;
 
     // 홈 화면으로 이동 (바인딩 포함)
@@ -63,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: 32),
             const Text(
-              '금연 앱',
+              '도와줘 금연',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -73,10 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 8),
             const Text(
               '건강한 금연 여정을 시작하세요',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.white70),
             ),
             const SizedBox(height: 48),
             const CircularProgressIndicator(
@@ -88,4 +85,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-

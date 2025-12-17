@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
@@ -11,6 +12,11 @@ import 'start_quitting_dialog.dart';
 
 class StatsGridCard extends GetView<HomeController> {
   const StatsGridCard({super.key});
+
+  // 초기화 버튼 탭 횟수 추적
+  static int _resetTapCount = 0;
+  static Timer? _resetTapTimer;
+  static bool _hasShownMessage = false; // 메시지 표시 여부
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +43,7 @@ class StatsGridCard extends GetView<HomeController> {
                   Expanded(
                     child: Obx(
                       () => StatCard(
-                        icon: Icons.flag,
+                        icon: Icons.access_time,
                         value: controller.elapsedFormatted,
                         label: '금연',
                       ),
@@ -57,7 +63,7 @@ class StatsGridCard extends GetView<HomeController> {
                       borderRadius: BorderRadius.circular(8),
                       child: Obx(
                         () => StatCard(
-                          icon: Icons.camera_alt_outlined,
+                          icon: Icons.savings,
                           value: controller.moneySavedFormatted,
                           label: '돈 절약',
                         ),
@@ -106,7 +112,7 @@ class StatsGridCard extends GetView<HomeController> {
                       borderRadius: BorderRadius.circular(8),
                       child: Obx(
                         () => StatCard(
-                          icon: Icons.settings,
+                          icon: Icons.smoking_rooms,
                           value: controller.isCigarettesPerDaySet.value
                               ? '${controller.cigarettesPerDay.value}개비'
                               : '하루 몇 개비\n피웠나요?',
@@ -151,11 +157,11 @@ class StatsGridCard extends GetView<HomeController> {
           right: 0,
           child: Center(
             child: Container(
-              width: 56,
-              height: 56,
+              key: controller.startButtonKey,
+              constraints: const BoxConstraints(minWidth: 80, minHeight: 40),
               decoration: BoxDecoration(
                 color: AppColor.cardBackground,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppColor.border, width: 2),
                 boxShadow: [
                   BoxShadow(
@@ -166,39 +172,47 @@ class StatsGridCard extends GetView<HomeController> {
                 ],
               ),
               child: Obx(
-                () => IconButton(
-                  icon: Icon(
-                    controller.isQuittingStarted.value
-                        ? Icons.refresh
-                        : Icons.flag,
-                    color: AppColor.iconRefresh,
-                    size: 28,
-                  ),
+                () => TextButton(
                   onPressed: () async {
                     if (controller.isQuittingStarted.value) {
-                      // 이미 시작한 경우 리셋 다이얼로그 표시
-                      final result = await showDialog<bool>(
-                        context: Get.context!,
-                        builder: (context) => const ResetConfirmDialog(),
-                      );
+                      // 초기화 버튼: 연속 5번 탭해야 다이얼로그 표시
+                      _resetTapCount++;
 
-                      if (result == true) {
-                        controller.reset();
+                      // 타이머 리셋 (2초 내에 5번 탭해야 함)
+                      _resetTapTimer?.cancel();
+                      _resetTapTimer = Timer(const Duration(seconds: 2), () {
+                        _resetTapCount = 0; // 2초 내에 5번 탭하지 않으면 리셋
+                        _hasShownMessage = false; // 메시지 표시 플래그도 리셋
+                      });
+
+                      if (_resetTapCount >= 5) {
+                        _resetTapCount = 0;
+                        _hasShownMessage = false;
+                        _resetTapTimer?.cancel();
+
+                        // 초기화 다이얼로그 표시
+                        final result = await showDialog<bool>(
+                          context: Get.context!,
+                          builder: (context) => const ResetConfirmDialog(),
+                        );
+
+                        if (result == true) {
+                          controller.reset();
+                        }
+                      } else if (_resetTapCount == 1 && !_hasShownMessage) {
+                        // 첫 번째 탭 시에만 메시지 표시
+                        _hasShownMessage = true;
                         Get.snackbar(
-                          '리셋 완료',
-                          '금연 시간이 초기화되었습니다.',
+                          '초기화',
+                          '4번 더 탭하세요',
                           snackPosition: SnackPosition.BOTTOM,
                           backgroundColor: AppColor.primary.withValues(
                             alpha: 0.9,
                           ),
                           colorText: Colors.white,
-                          duration: const Duration(seconds: 2),
+                          duration: const Duration(milliseconds: 1500),
                           margin: const EdgeInsets.all(16),
                           borderRadius: 8,
-                          icon: const Icon(
-                            Icons.check_circle,
-                            color: Colors.white,
-                          ),
                         );
                       }
                     } else {
@@ -229,6 +243,23 @@ class StatsGridCard extends GetView<HomeController> {
                       }
                     }
                   },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Text(
+                    controller.isQuittingStarted.value ? '초기화' : '금연 시작!',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColor.iconRefresh,
+                    ),
+                  ),
                 ),
               ),
             ),

@@ -27,7 +27,7 @@ class FutureRewardsCard extends GetView<HomeController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '대가로 무엇을 받게 되나요?',
+              '금연하면 얻어지는 것들',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,

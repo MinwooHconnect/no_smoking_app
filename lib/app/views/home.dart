@@ -7,6 +7,7 @@ import '../widgets/progress_card.dart';
 import '../widgets/stats_grid_card.dart';
 import '../widgets/future_rewards_card.dart';
 import '../widgets/ad_banner_widget.dart';
+import '../widgets/tutorial_overlay.dart';
 
 class Home extends GetView<HomeController> {
   const Home({super.key});
@@ -16,27 +17,45 @@ class Home extends GetView<HomeController> {
     return Scaffold(
       backgroundColor: AppColor.background,
       appBar: _buildAppBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // 메인 진행률 카드
-            const ProgressCard(),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // 메인 진행률 카드
+                const ProgressCard(),
 
-            // 통계 그리드
-            const StatsGridCard(),
+                // 통계 그리드
+                const StatsGridCard(),
 
-            // 애드몹 광고
-            const AdBannerWidget(),
+                // 애드몹 광고
+                const AdBannerWidget(),
 
-            // // 과거 흡연 기간 카드
-            // const SmokingPeriodCard(),
+                // // 과거 흡연 기간 카드
+                // const SmokingPeriodCard(),
 
-            // 미래 보상 카드
-            const FutureRewardsCard(),
+                // 미래 보상 카드
+                const FutureRewardsCard(),
 
-            const SizedBox(height: 32),
-          ],
-        ),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+          // 튜토리얼 오버레이 (첫 실행 시에만 표시, 데이터 로드 완료 후)
+          Obx(
+            () =>
+                controller.isDataLoaded.value &&
+                    controller.isFirstRun.value &&
+                    !controller.isQuittingStarted.value
+                ? TutorialOverlay(
+                    targetKey: controller.startButtonKey,
+                    onComplete: () {
+                      controller.completeTutorial();
+                    },
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
       ),
     );
   }
@@ -47,7 +66,7 @@ class Home extends GetView<HomeController> {
       foregroundColor: Colors.white,
       elevation: 0,
       title: const Text(
-        '금연 앱',
+        '도와줘 금연',
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
       ),
       actions: [
