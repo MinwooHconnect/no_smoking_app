@@ -7,6 +7,7 @@ import 'reset_confirm_dialog.dart';
 import 'cigarettes_per_day_dialog.dart';
 import 'money_saved_detail_dialog.dart';
 import 'cigarettes_not_smoked_detail_dialog.dart';
+import 'start_quitting_dialog.dart';
 
 class StatsGridCard extends GetView<HomeController> {
   const StatsGridCard({super.key});
@@ -75,6 +76,8 @@ class StatsGridCard extends GetView<HomeController> {
                           context: Get.context!,
                           builder: (context) => CigarettesPerDayDialog(
                             currentValue: controller.cigarettesPerDay.value,
+                            isInitialValue:
+                                !controller.isCigarettesPerDaySet.value,
                           ),
                         );
 
@@ -104,8 +107,12 @@ class StatsGridCard extends GetView<HomeController> {
                       child: Obx(
                         () => StatCard(
                           icon: Icons.settings,
-                          value: '${controller.cigarettesPerDay.value}개비',
-                          label: '하루에 피웠던 개수',
+                          value: controller.isCigarettesPerDaySet.value
+                              ? '${controller.cigarettesPerDay.value}개비'
+                              : '하루 몇 개비\n피웠나요?',
+                          label: controller.isCigarettesPerDaySet.value
+                              ? '하루에 피웠던 개수'
+                              : '탭하여 설정해주세요',
                         ),
                       ),
                     ),
@@ -158,33 +165,71 @@ class StatsGridCard extends GetView<HomeController> {
                   ),
                 ],
               ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color: AppColor.iconRefresh,
-                  size: 28,
-                ),
-                onPressed: () async {
-                  final result = await showDialog<bool>(
-                    context: Get.context!,
-                    builder: (context) => const ResetConfirmDialog(),
-                  );
+              child: Obx(
+                () => IconButton(
+                  icon: Icon(
+                    controller.isQuittingStarted.value
+                        ? Icons.refresh
+                        : Icons.flag,
+                    color: AppColor.iconRefresh,
+                    size: 28,
+                  ),
+                  onPressed: () async {
+                    if (controller.isQuittingStarted.value) {
+                      // 이미 시작한 경우 리셋 다이얼로그 표시
+                      final result = await showDialog<bool>(
+                        context: Get.context!,
+                        builder: (context) => const ResetConfirmDialog(),
+                      );
 
-                  if (result == true) {
-                    controller.reset();
-                    Get.snackbar(
-                      '리셋 완료',
-                      '금연 시간이 초기화되었습니다.',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: AppColor.primary.withValues(alpha: 0.9),
-                      colorText: Colors.white,
-                      duration: const Duration(seconds: 2),
-                      margin: const EdgeInsets.all(16),
-                      borderRadius: 8,
-                      icon: const Icon(Icons.check_circle, color: Colors.white),
-                    );
-                  }
-                },
+                      if (result == true) {
+                        controller.reset();
+                        Get.snackbar(
+                          '리셋 완료',
+                          '금연 시간이 초기화되었습니다.',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: AppColor.primary.withValues(
+                            alpha: 0.9,
+                          ),
+                          colorText: Colors.white,
+                          duration: const Duration(seconds: 2),
+                          margin: const EdgeInsets.all(16),
+                          borderRadius: 8,
+                          icon: const Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                          ),
+                        );
+                      }
+                    } else {
+                      // 아직 시작하지 않은 경우 금연 시작 다이얼로그 표시
+                      final result = await showDialog<bool>(
+                        context: Get.context!,
+                        builder: (context) => const StartQuittingDialog(),
+                      );
+
+                      if (result == true) {
+                        controller.startQuitting();
+                        Get.snackbar(
+                          '금연 시작!',
+                          '당신의 금연 여정이 시작되었습니다.',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: AppColor.primary.withValues(
+                            alpha: 0.9,
+                          ),
+                          colorText: Colors.white,
+                          duration: const Duration(seconds: 2),
+                          margin: const EdgeInsets.all(16),
+                          borderRadius: 8,
+                          icon: const Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
               ),
             ),
           ),

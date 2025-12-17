@@ -4,6 +4,7 @@ import '../controllers/home_controller.dart';
 import '../util/color.dart';
 import 'circular_progress_painter.dart';
 import 'target_period_dialog.dart';
+import 'motivational_message_dialog.dart';
 
 class ProgressCard extends GetView<HomeController> {
   const ProgressCard({super.key});
@@ -117,17 +118,58 @@ class ProgressCard extends GetView<HomeController> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 24),
-            child: ClipRect(
-              child: Center(
-                child: Obx(
-                  () => _AnimatedMotivationalMessage(
-                    message: controller.currentMotivationalMessage.value,
-                  ),
-                ),
-              ),
-            ),
+          Obx(
+            () => controller.isQuittingStarted.value
+                ? Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: Get.context!,
+                          builder: (context) => MotivationalMessageDialog(
+                            allCurrentMessages:
+                                controller.allMessagesIncludingDisabled,
+                          ),
+                        ).then((result) {
+                          if (result != null && result is List<String>) {
+                            controller.setCustomMotivationalMessages(result);
+                            Get.snackbar(
+                              '저장 완료',
+                              '응원 메시지가 저장되었습니다.',
+                              snackPosition: SnackPosition.BOTTOM,
+                              backgroundColor: AppColor.primary.withValues(
+                                alpha: 0.9,
+                              ),
+                              colorText: Colors.white,
+                              duration: const Duration(seconds: 2),
+                              margin: const EdgeInsets.all(16),
+                              borderRadius: 8,
+                              icon: const Icon(
+                                Icons.check_circle,
+                                color: Colors.white,
+                              ),
+                            );
+                          }
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: ClipRect(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          child: Center(
+                            child: _AnimatedMotivationalMessage(
+                              message:
+                                  controller.currentMotivationalMessage.value,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox(height: 24),
           ),
         ],
       ),
@@ -138,9 +180,7 @@ class ProgressCard extends GetView<HomeController> {
 class _AnimatedMotivationalMessage extends StatefulWidget {
   final String message;
 
-  const _AnimatedMotivationalMessage({
-    required this.message,
-  });
+  const _AnimatedMotivationalMessage({required this.message});
 
   @override
   State<_AnimatedMotivationalMessage> createState() =>
@@ -170,19 +210,13 @@ class _AnimatedMotivationalMessageState
     _exitAnimation = Tween<Offset>(
       begin: const Offset(0.0, 0.0), // 중앙에서 시작
       end: const Offset(-1.0, 0.0), // 왼쪽으로 사라짐
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     // 새 문구 애니메이션: 오른쪽에서 중앙으로 나타남
     _enterAnimation = Tween<Offset>(
       begin: const Offset(1.0, 0.0), // 오른쪽에서 시작
       end: const Offset(0.0, 0.0), // 중앙으로 이동
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -195,7 +229,7 @@ class _AnimatedMotivationalMessageState
 
   void _changeMessage() async {
     if (_isAnimating) return;
-    
+
     setState(() {
       _isAnimating = true;
       _previousMessage = _displayMessage;
@@ -204,18 +238,18 @@ class _AnimatedMotivationalMessageState
     // 1단계: 이전 문구를 중앙에서 왼쪽으로 사라지게
     _controller.reset();
     await _controller.forward();
-    
+
     // 이전 문구 제거 및 새 문구 설정
     if (mounted) {
       setState(() {
         _previousMessage = null;
         _displayMessage = widget.message;
       });
-      
+
       // 2단계: 새 문구를 오른쪽에서 중앙으로 나타나게
       _controller.reset();
       await _controller.forward();
-      
+
       if (mounted) {
         setState(() {
           _isAnimating = false;
@@ -237,34 +271,36 @@ class _AnimatedMotivationalMessageState
         alignment: Alignment.center,
         clipBehavior: Clip.hardEdge,
         children: [
-        // 이전 문구 (왼쪽으로 사라지는 중)
-        if (_previousMessage != null)
-          SlideTransition(
-            position: _exitAnimation,
-            child: Text(
-              _previousMessage!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColor.textPrimary,
+          // 이전 문구 (왼쪽으로 사라지는 중)
+          if (_previousMessage != null)
+            SlideTransition(
+              position: _exitAnimation,
+              child: Text(
+                _previousMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColor.textPrimary,
+                ),
               ),
             ),
-          ),
-        // 현재 문구 (이전 문구가 없을 때만 표시)
-        if (_previousMessage == null)
-          SlideTransition(
-            position: _isAnimating ? _enterAnimation : AlwaysStoppedAnimation(const Offset(0.0, 0.0)),
-            child: Text(
-              _displayMessage,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColor.textPrimary,
+          // 현재 문구 (이전 문구가 없을 때만 표시)
+          if (_previousMessage == null)
+            SlideTransition(
+              position: _isAnimating
+                  ? _enterAnimation
+                  : AlwaysStoppedAnimation(const Offset(0.0, 0.0)),
+              child: Text(
+                _displayMessage,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColor.textPrimary,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

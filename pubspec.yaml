@@ -44,6 +44,12 @@ dependencies:
   # Path provider for file operations
   path_provider: ^2.1.4
   cross_file: ^0.3.5+1
+  
+  # Shared preferences for local storage
+  shared_preferences: ^2.2.2
+  
+  # Local notifications
+  flutter_local_notifications: ^17.2.2
 
 dev_dependencies:
   flutter_test:

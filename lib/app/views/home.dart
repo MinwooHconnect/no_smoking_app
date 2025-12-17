@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
 import '../controllers/home_controller.dart';
 import '../util/color.dart';
 import '../widgets/progress_card.dart';
 import '../widgets/stats_grid_card.dart';
-import '../widgets/smoking_period_card.dart';
 import '../widgets/future_rewards_card.dart';
 
 class Home extends GetView<HomeController> {
@@ -24,8 +24,8 @@ class Home extends GetView<HomeController> {
             // 통계 그리드
             const StatsGridCard(),
 
-            // 과거 흡연 기간 카드
-            const SmokingPeriodCard(),
+            // // 과거 흡연 기간 카드
+            // const SmokingPeriodCard(),
 
             // 미래 보상 카드
             const FutureRewardsCard(),
@@ -47,10 +47,51 @@ class Home extends GetView<HomeController> {
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
       ),
       actions: [
-        IconButton(icon: const Icon(Icons.bookmark_border), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.gps_fixed), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
+        // 앱 공유하기 버튼
+        IconButton(icon: const Icon(Icons.share), onPressed: () => _shareApp()),
+        // 알림 설정 버튼 (종 아이콘 토글)
+        Obx(
+          () => controller.isQuittingStarted.value
+              ? IconButton(
+                  icon: Icon(
+                    controller.isNotificationVisible.value
+                        ? Icons.notifications_active
+                        : Icons.notifications_off,
+                  ),
+                  onPressed: () {
+                    final wasVisible = controller.isNotificationVisible.value;
+                    controller.toggleNotification();
+                    Get.snackbar(
+                      wasVisible ? '알림 숨김' : '알림 표시',
+                      wasVisible ? '금연 중 알림이 숨겨졌습니다.' : '금연 중 알림이 표시됩니다.',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: AppColor.primary.withValues(alpha: 0.9),
+                      colorText: Colors.white,
+                      duration: const Duration(seconds: 2),
+                      margin: const EdgeInsets.all(16),
+                      borderRadius: 8,
+                      icon: const Icon(Icons.check_circle, color: Colors.white),
+                    );
+                  },
+                )
+              : const SizedBox.shrink(),
+        ),
       ],
     );
+  }
+
+  // 앱 공유하기
+  void _shareApp() {
+    const playStoreLink =
+        'https://play.google.com/store/apps/details?id=com.example.no_smoking_app';
+    const shareText =
+        '''
+🚭 금연 앱을 추천합니다!
+
+건강한 금연 여정을 함께 시작해보세요.
+$playStoreLink
+''';
+
+    Share.share(shareText, subject: '금연 앱 추천');
   }
 }

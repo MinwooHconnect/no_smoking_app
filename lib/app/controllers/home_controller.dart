@@ -1,16 +1,22 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/future_reward.dart';
+import '../services/notification_service.dart';
 
 class HomeController extends GetxController {
   // Observable 변수들
   final elapsed = Duration.zero.obs;
   final targetPeriod = '3일'.obs; // 기본값 3일
   final currentMotivationalMessage = '저는 자제 중입니다!'.obs;
+  final isQuittingStarted = false.obs; // 금연 시작 여부
+  final isNotificationVisible = true.obs; // 알림 표시 여부
+  final customMotivationalMessages = <String>[].obs; // 사용자 정의 응원 메시지
+  final disabledMotivationalMessages = <String>{}.obs; // 비활성화된 응원 메시지
 
-  // 금연 동기부여 문구 목록
-  static const List<String> motivationalMessages = [
+  // 금연 동기부여 문구 목록 (기본)
+  static const List<String> defaultMotivationalMessages = [
     '저는 자제 중입니다!',
     '나는 강하다! 금연을 이겨낼 수 있다!',
     '건강한 미래를 위해 지금 선택한다!',
@@ -24,38 +30,189 @@ class HomeController extends GetxController {
     '금연으로 더 건강하고 행복한 나를 만든다!',
   ];
 
+  // 사용 가능한 모든 응원 메시지 (기본 + 사용자 정의, 비활성화된 것 제외)
+  List<String> get allMotivationalMessages {
+    final allMessages = <String>[];
+    if (customMotivationalMessages.isNotEmpty) {
+      allMessages.addAll(customMotivationalMessages);
+    }
+    allMessages.addAll(defaultMotivationalMessages);
+    // 비활성화된 메시지 제외
+    return allMessages
+        .where((msg) => !disabledMotivationalMessages.contains(msg))
+        .toList();
+  }
+
+  // 모든 메시지 (비활성화 여부와 관계없이)
+  List<String> get allMessagesIncludingDisabled {
+    final allMessages = <String>[];
+    if (customMotivationalMessages.isNotEmpty) {
+      allMessages.addAll(customMotivationalMessages);
+    }
+    allMessages.addAll(defaultMotivationalMessages);
+    return allMessages;
+  }
+
   // 설정값
-  final cigarettesPerDay = 20.obs; // 하루 담배 개비 수
+  final cigarettesPerDay = 10.obs; // 하루 담배 개비 수 (초기값 10개)
+  final isCigarettesPerDaySet = false.obs; // 사용자가 설정했는지 여부
   final double pricePerPack = 4500;
   final int cigarettesPerPack = 20;
 
-  late DateTime quitDate;
+  DateTime? quitDate; // 금연 시작일 (null이면 아직 시작하지 않음)
   Timer? _timer;
   Timer? _messageTimer;
   final _random = Random();
+  final NotificationService _notificationService = NotificationService();
+
+  // SharedPreferences 키
+  static const String _keyQuitDate = 'quitDate';
+  static const String _keyCigarettesPerDay = 'cigarettesPerDay';
+  static const String _keyIsCigarettesPerDaySet = 'isCigarettesPerDaySet';
+  static const String _keyIsQuittingStarted = 'isQuittingStarted';
+  static const String _keyTargetPeriod = 'targetPeriod';
+  static const String _keyIsNotificationVisible = 'isNotificationVisible';
+  static const String _keyCustomMotivationalMessages =
+      'customMotivationalMessages';
+  static const String _keyDisabledMotivationalMessages =
+      'disabledMotivationalMessages';
 
   @override
   void onInit() {
     super.onInit();
-    // 금연 시작일 (1일 18시간 4분 34초 전)
-    quitDate = DateTime.now().subtract(
-      const Duration(days: 1, hours: 18, minutes: 4, seconds: 34),
-    );
-    _updateElapsed();
+    _initializeNotifications();
+    _loadData();
     _startTimer();
     _startMessageTimer();
+  }
+
+  // 알림 초기화
+  Future<void> _initializeNotifications() async {
+    await _notificationService.initialize();
+  }
+
+  // 데이터 불러오기
+  Future<void> _loadData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // 금연 시작일 불러오기
+      final quitDateString = prefs.getString(_keyQuitDate);
+      if (quitDateString != null) {
+        quitDate = DateTime.parse(quitDateString);
+        isQuittingStarted.value = true;
+        _updateElapsed();
+      } else {
+        quitDate = null;
+        isQuittingStarted.value = false;
+        elapsed.value = Duration.zero;
+      }
+
+      // 하루 담배 개비 수 불러오기
+      final savedCigarettesPerDay = prefs.getInt(_keyCigarettesPerDay);
+      if (savedCigarettesPerDay != null) {
+        cigarettesPerDay.value = savedCigarettesPerDay;
+      }
+
+      // 설정 여부 불러오기
+      final savedIsCigarettesPerDaySet = prefs.getBool(
+        _keyIsCigarettesPerDaySet,
+      );
+      if (savedIsCigarettesPerDaySet != null) {
+        isCigarettesPerDaySet.value = savedIsCigarettesPerDaySet;
+      }
+
+      // 목표 기간 불러오기
+      final savedTargetPeriod = prefs.getString(_keyTargetPeriod);
+      if (savedTargetPeriod != null) {
+        targetPeriod.value = savedTargetPeriod;
+      }
+
+      // 알림 표시 여부 불러오기
+      final savedIsNotificationVisible = prefs.getBool(
+        _keyIsNotificationVisible,
+      );
+      if (savedIsNotificationVisible != null) {
+        isNotificationVisible.value = savedIsNotificationVisible;
+      }
+
+      // 사용자 정의 응원 메시지 불러오기
+      final savedCustomMessages = prefs.getStringList(
+        _keyCustomMotivationalMessages,
+      );
+      if (savedCustomMessages != null) {
+        customMotivationalMessages.value = savedCustomMessages;
+      }
+    } catch (e) {
+      // 에러 발생 시 기본값 사용
+      quitDate = null;
+      isQuittingStarted.value = false;
+      elapsed.value = Duration.zero;
+    }
+  }
+
+  // 데이터 저장하기
+  Future<void> _saveData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // 금연 시작일 저장
+      if (quitDate != null) {
+        await prefs.setString(_keyQuitDate, quitDate!.toIso8601String());
+      } else {
+        await prefs.remove(_keyQuitDate);
+      }
+
+      // 하루 담배 개비 수 저장
+      await prefs.setInt(_keyCigarettesPerDay, cigarettesPerDay.value);
+
+      // 설정 여부 저장
+      await prefs.setBool(
+        _keyIsCigarettesPerDaySet,
+        isCigarettesPerDaySet.value,
+      );
+
+      // 금연 시작 여부 저장
+      await prefs.setBool(_keyIsQuittingStarted, isQuittingStarted.value);
+
+      // 목표 기간 저장
+      await prefs.setString(_keyTargetPeriod, targetPeriod.value);
+
+      // 알림 표시 여부 저장
+      await prefs.setBool(
+        _keyIsNotificationVisible,
+        isNotificationVisible.value,
+      );
+
+      // 사용자 정의 응원 메시지 저장
+      await prefs.setStringList(
+        _keyCustomMotivationalMessages,
+        customMotivationalMessages,
+      );
+
+      // 비활성화된 응원 메시지 저장
+      await prefs.setStringList(
+        _keyDisabledMotivationalMessages,
+        disabledMotivationalMessages.toList(),
+      );
+    } catch (e) {
+      // 저장 실패 시 에러 무시 (선택적)
+    }
   }
 
   @override
   void onClose() {
     _timer?.cancel();
     _messageTimer?.cancel();
+    _notificationService.cancelNotification();
     super.onClose();
   }
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _updateElapsed();
+      if (isQuittingStarted.value && quitDate != null) {
+        _updateElapsed();
+      }
     });
   }
 
@@ -67,29 +224,102 @@ class HomeController extends GetxController {
   }
 
   void _changeMotivationalMessage() {
+    final allMessages = allMotivationalMessages;
+    if (allMessages.isEmpty) {
+      currentMotivationalMessage.value = '저는 자제 중입니다!';
+      return;
+    }
+
     // 현재 문구와 다른 랜덤 문구 선택
     String newMessage;
     do {
-      newMessage =
-          motivationalMessages[_random.nextInt(motivationalMessages.length)];
+      newMessage = allMessages[_random.nextInt(allMessages.length)];
     } while (newMessage == currentMotivationalMessage.value &&
-        motivationalMessages.length > 1);
+        allMessages.length > 1);
 
     currentMotivationalMessage.value = newMessage;
   }
 
+  // 사용자 정의 응원 메시지 설정
+  // messages는 모든 메시지(기본 + 사용자 정의)를 포함할 수 있음
+  void setCustomMotivationalMessages(List<String> messages) {
+    // 기본 메시지와 겹치는 메시지는 제외하고 사용자 정의 메시지만 저장
+    customMotivationalMessages.value = messages
+        .where((msg) => !defaultMotivationalMessages.contains(msg))
+        .toList();
+    _saveData();
+    // 메시지 변경 후 즉시 새 메시지 표시
+    if (allMotivationalMessages.isNotEmpty) {
+      _changeMotivationalMessage();
+    }
+  }
+
+  // 메시지 활성화/비활성화 상태 설정
+  void setMessageEnabled(String message, bool enabled) {
+    if (enabled) {
+      disabledMotivationalMessages.remove(message);
+    } else {
+      disabledMotivationalMessages.add(message);
+    }
+    _saveData();
+    // 메시지 변경 후 즉시 새 메시지 표시
+    if (allMotivationalMessages.isNotEmpty) {
+      _changeMotivationalMessage();
+    }
+  }
+
+  // 메시지가 활성화되어 있는지 확인
+  bool isMessageEnabled(String message) {
+    return !disabledMotivationalMessages.contains(message);
+  }
+
   void _updateElapsed() {
-    elapsed.value = DateTime.now().difference(quitDate);
+    if (quitDate != null) {
+      elapsed.value = DateTime.now().difference(quitDate!);
+      // 알림 업데이트 (표시 여부 확인)
+      if (isQuittingStarted.value && isNotificationVisible.value) {
+        _notificationService.updateQuittingTimer(elapsedFormatted);
+      } else if (!isNotificationVisible.value) {
+        _notificationService.cancelNotification();
+      }
+    } else {
+      elapsed.value = Duration.zero;
+      // 알림 제거
+      _notificationService.cancelNotification();
+    }
   }
 
   void refresh() {
     _updateElapsed();
   }
 
+  // 알림 숨기기/보이기 토글
+  void toggleNotification() {
+    isNotificationVisible.value = !isNotificationVisible.value;
+    if (isNotificationVisible.value &&
+        isQuittingStarted.value &&
+        quitDate != null) {
+      _notificationService.updateQuittingTimer(elapsedFormatted);
+    } else {
+      _notificationService.cancelNotification();
+    }
+    _saveData();
+  }
+
+  void startQuitting() {
+    quitDate = DateTime.now();
+    isQuittingStarted.value = true;
+    elapsed.value = Duration.zero;
+    _updateElapsed();
+    _saveData();
+  }
+
   void reset() {
     quitDate = DateTime.now();
     elapsed.value = Duration.zero;
+    isQuittingStarted.value = true;
     _updateElapsed();
+    _saveData();
   }
 
   // Getters
@@ -117,6 +347,9 @@ class HomeController extends GetxController {
   }
 
   double get progressPercentage {
+    if (!isQuittingStarted.value || quitDate == null) {
+      return 0.0;
+    }
     final targetSeconds = targetDuration.inSeconds;
     final progress = elapsed.value.inSeconds / targetSeconds;
     return (progress * 100).clamp(0, 100);
@@ -124,6 +357,7 @@ class HomeController extends GetxController {
 
   void setTargetPeriod(String period) {
     targetPeriod.value = period;
+    _saveData();
   }
 
   // 한 개비당 225원으로 계산
@@ -140,6 +374,9 @@ class HomeController extends GetxController {
 
   // 설정한 하루 담배 개비 수와 경과 시간에 의거하여 피우지 않은 담배 개비 수 계산
   int get cigarettesNotSmoked {
+    if (!isQuittingStarted.value || quitDate == null) {
+      return 0;
+    }
     // 경과 시간(일 단위) * 하루 담배 개비 수
     final daysElapsed = elapsed.value.inDays;
     final hoursElapsed = elapsed.value.inHours % 24;
@@ -154,6 +391,8 @@ class HomeController extends GetxController {
   void setCigarettesPerDay(int value) {
     if (value > 0) {
       cigarettesPerDay.value = value;
+      isCigarettesPerDaySet.value = true;
+      _saveData();
     }
   }
 

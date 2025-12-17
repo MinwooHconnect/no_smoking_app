@@ -3,10 +3,12 @@ import '../util/color.dart';
 
 class CigarettesPerDayDialog extends StatefulWidget {
   final int currentValue;
+  final bool isInitialValue;
 
   const CigarettesPerDayDialog({
     super.key,
     required this.currentValue,
+    this.isInitialValue = false,
   });
 
   @override
@@ -79,11 +81,18 @@ class _CigarettesPerDayDialogState extends State<CigarettesPerDayDialog> {
               ],
             ),
             const SizedBox(height: 20),
-            const Text(
-              '하루에 피웠던 담배 개비 수를 선택하세요',
+            Text(
+              widget.isInitialValue
+                  ? '하루에 피웠던 담배 개비 수를 선택해주세요'
+                  : '하루에 피웠던 담배 개비 수를 선택하세요',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColor.textSecondary,
+                color: widget.isInitialValue
+                    ? AppColor.primary
+                    : AppColor.textSecondary,
+                fontWeight: widget.isInitialValue
+                    ? FontWeight.w600
+                    : FontWeight.normal,
               ),
               textAlign: TextAlign.center,
             ),
