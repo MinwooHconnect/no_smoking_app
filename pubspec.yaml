@@ -50,6 +50,9 @@ dependencies:
   
   # Local notifications
   flutter_local_notifications: ^17.2.2
+  
+  # Google Mobile Ads
+  google_mobile_ads: ^5.1.0
 
 dev_dependencies:
   flutter_test:

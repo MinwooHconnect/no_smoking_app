@@ -9,7 +9,7 @@ class FutureRewardsCard extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
         color: AppColor.cardBackground,
         borderRadius: BorderRadius.circular(8),

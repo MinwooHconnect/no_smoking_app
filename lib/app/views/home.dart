@@ -6,6 +6,7 @@ import '../util/color.dart';
 import '../widgets/progress_card.dart';
 import '../widgets/stats_grid_card.dart';
 import '../widgets/future_rewards_card.dart';
+import '../widgets/ad_banner_widget.dart';
 
 class Home extends GetView<HomeController> {
   const Home({super.key});
@@ -23,6 +24,9 @@ class Home extends GetView<HomeController> {
 
             // 통계 그리드
             const StatsGridCard(),
+
+            // 애드몹 광고
+            const AdBannerWidget(),
 
             // // 과거 흡연 기간 카드
             // const SmokingPeriodCard(),

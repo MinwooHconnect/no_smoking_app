@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'app/routes/app_pages.dart';
 import 'app/util/color.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 애드몹 초기화 (에러 발생 시에도 앱은 실행되도록)
+  try {
+    await MobileAds.instance.initialize();
+  } catch (e) {
+    debugPrint('애드몹 초기화 실패: $e');
+  }
+
   runApp(const NoSmokingApp());
 }
 
