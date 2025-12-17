@@ -4,6 +4,9 @@ import '../controllers/home_controller.dart';
 import '../util/color.dart';
 import 'stat_card.dart';
 import 'reset_confirm_dialog.dart';
+import 'cigarettes_per_day_dialog.dart';
+import 'money_saved_detail_dialog.dart';
+import 'cigarettes_not_smoked_detail_dialog.dart';
 
 class StatsGridCard extends GetView<HomeController> {
   const StatsGridCard({super.key});
@@ -41,11 +44,22 @@ class StatsGridCard extends GetView<HomeController> {
                   ),
                   Container(width: 1, height: 120, color: AppColor.divider),
                   Expanded(
-                    child: Obx(
-                      () => StatCard(
-                        icon: Icons.camera_alt_outlined,
-                        value: controller.moneySavedFormatted,
-                        label: '돈 절약',
+                    child: InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: Get.context!,
+                          builder: (context) => const MoneySavedDetailDialog(),
+                        );
+                      },
+                      splashColor: AppColor.primary.withValues(alpha: 0.2),
+                      highlightColor: AppColor.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Obx(
+                        () => StatCard(
+                          icon: Icons.camera_alt_outlined,
+                          value: controller.moneySavedFormatted,
+                          label: '돈 절약',
+                        ),
                       ),
                     ),
                   ),
@@ -55,21 +69,66 @@ class StatsGridCard extends GetView<HomeController> {
               Row(
                 children: [
                   Expanded(
-                    child: Obx(
-                      () => StatCard(
-                        icon: Icons.access_time,
-                        value: controller.lifeRegainedFormatted,
-                        label: '생명 되찾음',
+                    child: InkWell(
+                      onTap: () async {
+                        final result = await showDialog<int>(
+                          context: Get.context!,
+                          builder: (context) => CigarettesPerDayDialog(
+                            currentValue: controller.cigarettesPerDay.value,
+                          ),
+                        );
+
+                        if (result != null) {
+                          controller.setCigarettesPerDay(result);
+                          Get.snackbar(
+                            '설정 완료',
+                            '하루 담배 개비 수가 ${result}개비로 설정되었습니다.',
+                            snackPosition: SnackPosition.BOTTOM,
+                            backgroundColor: AppColor.primary.withValues(
+                              alpha: 0.9,
+                            ),
+                            colorText: Colors.white,
+                            duration: const Duration(seconds: 2),
+                            margin: const EdgeInsets.all(16),
+                            borderRadius: 8,
+                            icon: const Icon(
+                              Icons.check_circle,
+                              color: Colors.white,
+                            ),
+                          );
+                        }
+                      },
+                      splashColor: AppColor.primary.withValues(alpha: 0.2),
+                      highlightColor: AppColor.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Obx(
+                        () => StatCard(
+                          icon: Icons.settings,
+                          value: '${controller.cigarettesPerDay.value}개비',
+                          label: '하루에 피웠던 개수',
+                        ),
                       ),
                     ),
                   ),
                   Container(width: 1, height: 120, color: AppColor.divider),
                   Expanded(
-                    child: Obx(
-                      () => StatCard(
-                        icon: Icons.smoke_free,
-                        value: controller.cigarettesNotSmokedFormatted,
-                        label: '담배 연기 없음',
+                    child: InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: Get.context!,
+                          builder: (context) =>
+                              const CigarettesNotSmokedDetailDialog(),
+                        );
+                      },
+                      splashColor: AppColor.primary.withValues(alpha: 0.2),
+                      highlightColor: AppColor.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Obx(
+                        () => StatCard(
+                          icon: Icons.smoke_free,
+                          value: controller.cigarettesNotSmokedFormatted,
+                          label: '안 피운 개비',
+                        ),
                       ),
                     ),
                   ),

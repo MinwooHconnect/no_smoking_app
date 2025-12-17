@@ -25,7 +25,7 @@ class HomeController extends GetxController {
   ];
 
   // 설정값
-  final int cigarettesPerDay = 20;
+  final cigarettesPerDay = 20.obs; // 하루 담배 개비 수
   final double pricePerPack = 4500;
   final int cigarettesPerPack = 20;
 
@@ -70,9 +70,11 @@ class HomeController extends GetxController {
     // 현재 문구와 다른 랜덤 문구 선택
     String newMessage;
     do {
-      newMessage = motivationalMessages[_random.nextInt(motivationalMessages.length)];
-    } while (newMessage == currentMotivationalMessage.value && motivationalMessages.length > 1);
-    
+      newMessage =
+          motivationalMessages[_random.nextInt(motivationalMessages.length)];
+    } while (newMessage == currentMotivationalMessage.value &&
+        motivationalMessages.length > 1);
+
     currentMotivationalMessage.value = newMessage;
   }
 
@@ -124,21 +126,35 @@ class HomeController extends GetxController {
     targetPeriod.value = period;
   }
 
-  double get moneySaved {
-    final totalCigarettesNotSmoked =
-        (elapsed.value.inMinutes / (24 * 60)) * cigarettesPerDay;
-    return (totalCigarettesNotSmoked / cigarettesPerPack) * pricePerPack;
+  // 한 개비당 225원으로 계산
+  int get moneySaved {
+    return cigarettesNotSmoked * 225;
   }
 
   Duration get lifeRegained {
     // 담배 한 개비당 11분의 수명 단축
     final totalCigarettesNotSmoked =
-        (elapsed.value.inMinutes / (24 * 60)) * cigarettesPerDay;
+        (elapsed.value.inMinutes / (24 * 60)) * cigarettesPerDay.value;
     return Duration(minutes: (totalCigarettesNotSmoked * 11).round());
   }
 
-  double get cigarettesNotSmoked {
-    return (elapsed.value.inMinutes / (24 * 60)) * cigarettesPerDay;
+  // 설정한 하루 담배 개비 수와 경과 시간에 의거하여 피우지 않은 담배 개비 수 계산
+  int get cigarettesNotSmoked {
+    // 경과 시간(일 단위) * 하루 담배 개비 수
+    final daysElapsed = elapsed.value.inDays;
+    final hoursElapsed = elapsed.value.inHours % 24;
+    final minutesElapsed = elapsed.value.inMinutes % 60;
+
+    // 일 단위 + 시간 단위 + 분 단위를 모두 고려
+    final totalDays =
+        daysElapsed + (hoursElapsed / 24) + (minutesElapsed / (24 * 60));
+    return (totalDays * cigarettesPerDay.value).round();
+  }
+
+  void setCigarettesPerDay(int value) {
+    if (value > 0) {
+      cigarettesPerDay.value = value;
+    }
   }
 
   String formatDuration(Duration duration) {
@@ -160,9 +176,16 @@ class HomeController extends GetxController {
 
   String get elapsedFormatted => formatDuration(elapsed.value);
   String get lifeRegainedFormatted => formatDuration(lifeRegained);
-  String get moneySavedFormatted => '₩ ${moneySaved.toStringAsFixed(2)}';
-  String get cigarettesNotSmokedFormatted =>
-      cigarettesNotSmoked.toStringAsFixed(1);
+  String get moneySavedFormatted {
+    final amount = moneySaved;
+    final formatted = amount.toString().replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '₩ $formatted';
+  }
+
+  String get cigarettesNotSmokedFormatted => '${cigarettesNotSmoked}개비';
 
   // 과거 흡연 기간 데이터 (예시 데이터 - 실제로는 사용자 입력 또는 저장된 데이터 사용)
   // 스크린샷 기준: 29,200개비, ₩ 4,379,999.5, 7달 13일 1시간
