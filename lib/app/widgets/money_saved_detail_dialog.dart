@@ -13,13 +13,6 @@ import '../util/color.dart';
 class MoneySavedDetailDialog extends GetView<HomeController> {
   const MoneySavedDetailDialog({super.key});
 
-  String _formatMoney(int amount) {
-    return amount.toString().replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-  }
-
   Future<void> _shareScreenshot(
     BuildContext context,
     GlobalKey screenshotKey,
@@ -50,7 +43,7 @@ class MoneySavedDetailDialog extends GetView<HomeController> {
       final elapsed = controller.elapsedFormatted;
       final cigarettesPerDay = controller.cigarettesPerDay.value;
       final cigarettesNotSmoked = controller.cigarettesNotSmoked;
-      final moneySaved = _formatMoney(controller.moneySaved);
+      final moneySaved = controller.formatMoney(controller.moneySaved.toDouble());
 
       const playStoreLink =
           'https://play.google.com/store/apps/details?id=com.example.no_smoking_app';
@@ -208,7 +201,7 @@ $playStoreLink
                             ),
                           ),
                           Text(
-                            '₩ ${_formatMoney(controller.moneySaved)}',
+                            '₩ ${controller.formatMoney(controller.moneySaved.toDouble())}',
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,

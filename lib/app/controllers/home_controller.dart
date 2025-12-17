@@ -365,6 +365,22 @@ class HomeController extends GetxController {
     return cigarettesNotSmoked * 225;
   }
 
+  // 숫자에 천 단위 콤마 추가
+  String formatMoney(double amount) {
+    final amountInt = amount.toInt();
+    final amountStr = amountInt.toString();
+    final buffer = StringBuffer();
+
+    for (int i = 0; i < amountStr.length; i++) {
+      if (i > 0 && (amountStr.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+      buffer.write(amountStr[i]);
+    }
+
+    return buffer.toString();
+  }
+
   Duration get lifeRegained {
     // 담배 한 개비당 11분의 수명 단축
     final totalCigarettesNotSmoked =
@@ -416,12 +432,7 @@ class HomeController extends GetxController {
   String get elapsedFormatted => formatDuration(elapsed.value);
   String get lifeRegainedFormatted => formatDuration(lifeRegained);
   String get moneySavedFormatted {
-    final amount = moneySaved;
-    final formatted = amount.toString().replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-    return '₩ $formatted';
+    return '₩ ${formatMoney(moneySaved.toDouble())}';
   }
 
   String get cigarettesNotSmokedFormatted => '${cigarettesNotSmoked}개비';
@@ -453,80 +464,83 @@ class HomeController extends GetxController {
   String get totalMoneyWastedFormatted =>
       '₩ ${totalMoneyWasted.toStringAsFixed(1)}';
 
-  List<FutureReward> get futureRewards => [
-    FutureReward(
-      period: '1주',
-      money: 16800,
-      life: const Duration(hours: 20, minutes: 32),
-    ),
-    FutureReward(
-      period: '1개월',
-      money: 72000,
-      life: const Duration(days: 3, hours: 16),
-    ),
-    FutureReward(
-      period: '1년',
-      money: 876000,
-      life: const Duration(days: 44, hours: 14), // 1달 14일 14시간
-    ),
-    FutureReward(
-      period: '5년',
-      money: 4380000,
-      life: const Duration(days: 223, hours: 1), // 7달 13일 1시간
-    ),
-    FutureReward(
-      period: '10년',
-      money: 8760000,
-      life: const Duration(days: 446, hours: 0), // 1년 2달 26일
-    ),
-    FutureReward(
-      period: '20년',
-      money: 17520000,
-      life: const Duration(days: 892, hours: 0), // 2년 5달 22일
-    ),
-  ];
+  List<FutureReward> get futureRewards {
+    const pricePerCigarette = 225.0; // 한 개비당 225원
+    const minutesPerCigarette = 11; // 한 개비당 11분의 수명 회복
+    final dailyCigarettes = cigarettesPerDay.value.toDouble();
+
+    return [
+      FutureReward(
+        period: '1주',
+        money: (7 * dailyCigarettes * pricePerCigarette).toDouble(),
+        life: Duration(
+          minutes: (7 * dailyCigarettes * minutesPerCigarette).round(),
+        ),
+      ),
+      FutureReward(
+        period: '1개월',
+        money: (30 * dailyCigarettes * pricePerCigarette).toDouble(),
+        life: Duration(
+          minutes: (30 * dailyCigarettes * minutesPerCigarette).round(),
+        ),
+      ),
+      FutureReward(
+        period: '1년',
+        money: (365 * dailyCigarettes * pricePerCigarette).toDouble(),
+        life: Duration(
+          minutes: (365 * dailyCigarettes * minutesPerCigarette).round(),
+        ),
+      ),
+      FutureReward(
+        period: '5년',
+        money: (5 * 365 * dailyCigarettes * pricePerCigarette).toDouble(),
+        life: Duration(
+          minutes: (5 * 365 * dailyCigarettes * minutesPerCigarette).round(),
+        ),
+      ),
+      FutureReward(
+        period: '10년',
+        money: (10 * 365 * dailyCigarettes * pricePerCigarette).toDouble(),
+        life: Duration(
+          minutes: (10 * 365 * dailyCigarettes * minutesPerCigarette).round(),
+        ),
+      ),
+      FutureReward(
+        period: '20년',
+        money: (20 * 365 * dailyCigarettes * pricePerCigarette).toDouble(),
+        life: Duration(
+          minutes: (20 * 365 * dailyCigarettes * minutesPerCigarette).round(),
+        ),
+      ),
+    ];
+  }
 
   String formatFutureLife(Duration duration) {
-    final years = duration.inDays ~/ 365;
-    final months = (duration.inDays % 365) ~/ 30;
-    final days = (duration.inDays % 365) % 30;
-    final hours = duration.inHours % 24;
-    final minutes = duration.inMinutes % 60;
+    final totalDays = duration.inDays;
+    final totalHours = duration.inHours;
+    final years = totalDays ~/ 365;
+    final months = (totalDays % 365) ~/ 30;
+    final days = (totalDays % 365) % 30;
 
-    if (years > 0) {
-      if (months > 0) {
-        if (days > 0) {
-          return '${years}년 ${months}달 ${days}일';
+    // 일 단위 이상이 있으면 일 단위 이상으로만 표시
+    if (totalDays > 0) {
+      if (years > 0) {
+        if (months > 0) {
+          // 달 이상이 있으면 일 표시하지 않음
+          return '${years}년 ${months}달';
         }
-        return '${years}년 ${months}달';
+        // 년만 있으면 일 표시하지 않음
+        return '${years}년';
+      } else if (months > 0) {
+        // 달만 있으면 일 표시하지 않음
+        return '${months}달';
+      } else {
+        // 일만 있으면 일 표시
+        return '${days}일';
       }
-      return '${years}년';
-    } else if (months > 0) {
-      if (days > 0) {
-        if (hours > 0) {
-          return '${months}달 ${days}일 ${hours}시간';
-        }
-        return '${months}달 ${days}일';
-      }
-      if (hours > 0) {
-        return '${months}달 ${hours}시간';
-      }
-      return '${months}달';
-    } else if (days > 0) {
-      if (hours > 0) {
-        if (minutes > 0) {
-          return '${days}일 ${hours}시간 ${minutes}분';
-        }
-        return '${days}일 ${hours}시간';
-      }
-      return '${days}일';
-    } else if (hours > 0) {
-      if (minutes > 0) {
-        return '${hours}시간 ${minutes}분';
-      }
-      return '${hours}시간';
     } else {
-      return '${minutes}분';
+      // 일 단위가 안되면 시간으로 표시
+      return '${totalHours}시간';
     }
   }
 }

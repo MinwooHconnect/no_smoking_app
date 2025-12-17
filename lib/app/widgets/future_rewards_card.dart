@@ -40,63 +40,112 @@ class FutureRewardsCard extends GetView<HomeController> {
               style: TextStyle(fontSize: 14, color: AppColor.textSecondary),
             ),
             const SizedBox(height: 16),
-            ...controller.futureRewards.asMap().entries.map((entry) {
-              final index = entry.key;
-              final reward = entry.value;
-              return Column(
+            Obx(
+              () => Table(
+                columnWidths: const {
+                  0: FlexColumnWidth(2),
+                  1: FlexColumnWidth(3),
+                  2: FlexColumnWidth(3),
+                },
                 children: [
-                  _buildRewardRow(
-                    period: reward.period,
-                    money: '₩ ${reward.money.toStringAsFixed(0)}',
-                    life: controller.formatFutureLife(reward.life),
-                  ),
-                  if (index < controller.futureRewards.length - 1)
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      height: 1,
-                      color: AppColor.divider,
+                  // 헤더 행
+                  TableRow(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: AppColor.divider, width: 1),
+                      ),
                     ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          '기간',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColor.textSecondary,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          '돈',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColor.textSecondary,
+                          ),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          '수명',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColor.textSecondary,
+                          ),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // 데이터 행들
+                  ...controller.futureRewards.map((reward) {
+                    return TableRow(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: AppColor.divider.withValues(alpha: 0.5),
+                            width: 0.5,
+                          ),
+                        ),
+                      ),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            reward.period,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppColor.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            '₩ ${controller.formatMoney(reward.money)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppColor.textPrimary,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            controller.formatFutureLife(reward.life),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppColor.textPrimary,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
                 ],
-              );
-            }),
+              ),
+            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildRewardRow({
-    required String period,
-    required String money,
-    required String life,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            period,
-            style: const TextStyle(fontSize: 16, color: AppColor.textPrimary),
-          ),
-        ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            money,
-            style: const TextStyle(fontSize: 16, color: AppColor.textPrimary),
-            textAlign: TextAlign.right,
-          ),
-        ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            life,
-            style: const TextStyle(fontSize: 16, color: AppColor.textPrimary),
-            textAlign: TextAlign.right,
-          ),
-        ),
-      ],
     );
   }
 }
