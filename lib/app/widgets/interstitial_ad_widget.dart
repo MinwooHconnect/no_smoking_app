@@ -8,7 +8,7 @@ class InterstitialAdWidget {
   // 테스트용 전면 광고 단위 ID (실제 배포 시에는 실제 광고 단위 ID로 변경)
   // Android 테스트 ID: ca-app-pub-3940256099942544/1033173712
   // iOS 테스트 ID: ca-app-pub-3940256099942544/4411468910
-  static const String _adUnitId = 'ca-app-pub-3940256099942544/1033173712';
+  static const String _adUnitId = 'ca-app-pub-3653426435604549~2970213963';
 
   // 전면 광고 로드
   static Future<void> loadInterstitialAd() async {
@@ -79,4 +79,3 @@ class InterstitialAdWidget {
     loadInterstitialAd();
   }
 }
-

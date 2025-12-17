@@ -18,7 +18,7 @@ class StatsGridCard extends GetView<HomeController> {
       clipBehavior: Clip.none,
       children: [
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           decoration: BoxDecoration(
             color: AppColor.cardBackground,
             borderRadius: BorderRadius.circular(8),
