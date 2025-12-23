@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
@@ -10,6 +11,7 @@ class NotificationService {
 
   bool _isInitialized = false;
   static const int _notificationId = 1;
+  DateTime? _lastIosUpdateTime;
 
   // 알림 초기화
   Future<void> initialize() async {
@@ -20,10 +22,10 @@ class NotificationService {
 
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: false,
-    );
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: false,
+        );
 
     const InitializationSettings initSettings = InitializationSettings(
       android: androidSettings,
@@ -48,7 +50,8 @@ class NotificationService {
 
     await _notifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
 
     _isInitialized = true;
@@ -65,23 +68,38 @@ class NotificationService {
       await initialize();
     }
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'quitting_timer_channel',
-      '금연 타이머',
-      channelDescription: '금연 시간을 실시간으로 표시합니다',
-      importance: Importance.low,
-      priority: Priority.low,
-      ongoing: true,
-      autoCancel: false,
-      showWhen: false,
-      enableVibration: false,
-      playSound: false,
-    );
+    // iOS에서는 알림 업데이트를 1분마다만 수행하여 소리/진동 방지
+    if (Platform.isIOS) {
+      final now = DateTime.now();
+      if (_lastIosUpdateTime != null) {
+        final difference = now.difference(_lastIosUpdateTime!);
+        // 1분 미만이면 업데이트하지 않음
+        if (difference.inSeconds < 60) {
+          return;
+        }
+      }
+      _lastIosUpdateTime = now;
+    }
+
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+          'quitting_timer_channel',
+          '금연 타이머',
+          channelDescription: '금연 시간을 실시간으로 표시합니다',
+          importance: Importance.low,
+          priority: Priority.low,
+          ongoing: true,
+          autoCancel: false,
+          showWhen: false,
+          enableVibration: false,
+          playSound: false,
+        );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
       presentAlert: false,
       presentBadge: false,
       presentSound: false,
+      interruptionLevel: InterruptionLevel.passive,
     );
 
     const NotificationDetails details = NotificationDetails(
@@ -89,12 +107,7 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(
-      _notificationId,
-      '🚭 금연 중',
-      elapsedTime,
-      details,
-    );
+    await _notifications.show(_notificationId, '🚭 금연 중', elapsedTime, details);
   }
 
   // 알림 제거
@@ -102,4 +115,3 @@ class NotificationService {
     await _notifications.cancel(_notificationId);
   }
 }
-

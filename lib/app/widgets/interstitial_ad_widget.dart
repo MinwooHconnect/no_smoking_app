@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -5,10 +6,16 @@ class InterstitialAdWidget {
   static InterstitialAd? _interstitialAd;
   static bool _isAdLoaded = false;
 
-  // 테스트용 전면 광고 단위 ID (실제 배포 시에는 실제 광고 단위 ID로 변경)
-  // Android 테스트 ID: ca-app-pub-3940256099942544/1033173712
-  // iOS 테스트 ID: ca-app-pub-3940256099942544/4411468910
-  static const String _adUnitId = 'ca-app-pub-3653426435604549~2970213963';
+  // 플랫폼별 전면 광고 단위 ID
+  static String get _adUnitId {
+    if (Platform.isIOS) {
+      // iOS 전면 광고 ID
+      return 'ca-app-pub-3653426435604549~3317003799';
+    } else {
+      // Android 전면 광고 ID
+      return 'ca-app-pub-3653426435604549/8805635202';
+    }
+  }
 
   // 전면 광고 로드
   static Future<void> loadInterstitialAd() async {

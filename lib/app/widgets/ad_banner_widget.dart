@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../util/color.dart';
@@ -13,10 +14,16 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
 
-  // 테스트용 광고 단위 ID (실제 배포 시에는 실제 광고 단위 ID로 변경)
-  // Android 테스트 ID: ca-app-pub-3940256099942544/6300978111
-  // iOS 테스트 ID: ca-app-pub-3940256099942544/2934735716
-  final String _adUnitId = 'ca-app-pub-3653426435604549~2970213963';
+  // 플랫폼별 배너 광고 단위 ID
+  String get _adUnitId {
+    if (Platform.isIOS) {
+      // iOS 배너 광고 ID
+      return 'ca-app-pub-3653426435604549/5935250665';
+    } else {
+      // Android 배너 광고 ID
+      return 'ca-app-pub-3653426435604549/6782107095';
+    }
+  }
 
   @override
   void initState() {
