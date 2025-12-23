@@ -93,6 +93,8 @@ class NotificationService {
           showWhen: false,
           enableVibration: false,
           playSound: false,
+          // 작은 아이콘으로 foreground만 사용하여 패딩 줄임
+          icon: '@drawable/ic_launcher_foreground',
         );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
